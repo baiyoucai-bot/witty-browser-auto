@@ -6,7 +6,7 @@
 
 本仓库是给**外部大模型智能体**调用的确定性浏览器工具库：调用方的模型决定下一步做什么，本库保证每一步做得对——参数校验、业务后置条件、脱敏、非幂等防重放、采集完整性门全部由固定代码执行。**仓库内不存在任何发起模型请求的代码。** 2026-08-28 架构收敛删除了模型网关、引擎循环、聊天工作台、Electron 桌面壳与自我进化模块，备份在仓库外；本文不再描述这些层。
 
-自动化驱动由本项目直接实现为 Python `asyncio` 异步 Chrome DevTools Protocol（CDP）内核。运行时及传递依赖中绝不引入 Playwright、Selenium 或 DrissionPage。运行依赖只有 `aiohttp`，它仅作为 HTTP/WebSocket 传输库，不提供任何浏览器自动化语义。
+自动化驱动由本项目直接实现为 Python `asyncio` 异步 Chrome DevTools Protocol（CDP）内核，不依赖任何第三方浏览器自动化框架。运行依赖只有 `aiohttp`，它仅作为 HTTP/WebSocket 传输库，不提供任何浏览器自动化语义。
 
 ## 2. 分层与模块边界
 

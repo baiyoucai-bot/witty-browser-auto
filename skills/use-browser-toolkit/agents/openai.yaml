@@ -1,0 +1,4 @@
+interface:
+  display_name: "Witty 浏览器工具库"
+  short_description: "驱动真实 Chrome 完成网页自动化、数据采集与接口逆向"
+  default_prompt: "使用 $use-browser-toolkit 操作浏览器完成这个任务。"

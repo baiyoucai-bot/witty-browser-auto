@@ -162,8 +162,7 @@ def _doctor() -> int:
 
     report: dict[str, Any] = {
         "Python要求": ">=3.11",
-        "浏览器内核": "自主异步 CDP",
-        "禁止运行时": ["Playwright", "Selenium", "DrissionPage"],
+        "浏览器内核": "自研异步 CDP（运行依赖仅 aiohttp）",
     }
     exit_code = 0
     try:
