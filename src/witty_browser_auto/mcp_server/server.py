@@ -137,8 +137,8 @@ class McpServer:
             "serverInfo": {"name": SERVER_NAME, "version": self.server_version},
             "instructions": (
                 "先调用 open_browser 打开入口地址，再用 observe 获取候选与 target_id；"
-                "元素类工具的 target_id 必须逐字来自最近一次页面观察。页面动作（navigate、"
-                "click、input_text、fill_form 等）的结果里自带 page 字段——那就是动作之后的"
+                "元素类工具的 target_id 必须逐字来自最近一次页面观察。页面动作(navigate、"
+                "click、input_text、fill_form 等)的结果里自带 page 字段——那就是动作之后的"
                 "新观察，直接用其中的 target_id 走下一步，不必再调 observe；旧候选在动作后"
                 "立即作废。click 可以不给 expect_kind，缺省按“页面有变化”校验；知道业务"
                 "结果时优先给 url_contains / text_contains 这类业务判据。"

@@ -2213,7 +2213,7 @@ class ToolExecutor:
                 idempotent=True,
             )
         if command.kind is ActionKind.INPUT_TEXT and not input_key:
-            # 字面量输入是一次性的（搜索词、备注），不进跨任务快速路径。
+            # 字面量输入是一次性的(搜索词、备注)，不进跨任务快速路径。
             return None
         expected_value = command.expected.value if command.expected else None
         if command.expected and command.expected.kind == "target_exists":

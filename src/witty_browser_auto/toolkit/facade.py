@@ -238,7 +238,7 @@ class BrowserToolkit:
         ):
             # 调用方没声明业务后置条件时退到"页面有变化"：点开菜单、切换标签、展开详情
             # 这类探索性动作事先说不清结果，逼调用方编一个判据只会换来一次被拒绝的回合。
-            # 业务判据（url/text）仍然更强，知道结果时应当优先给。
+            # 业务判据(url/text)仍然更强，知道结果时应当优先给。
             arguments["expect_kind"] = "fingerprint_changed"
         if (
             arguments.get("expect_kind") == "fingerprint_changed"
@@ -383,7 +383,7 @@ class BrowserToolkit:
         button: str | None = None,
         click_count: int | None = None,
     ) -> ToolExecutionResult:
-        """点击候选；不给后置条件时按"页面有变化"校验（自动绑定当前观察指纹）。"""
+        """点击候选；不给后置条件时按"页面有变化"校验(自动绑定当前观察指纹)。"""
 
         return await self.call(
             "click",

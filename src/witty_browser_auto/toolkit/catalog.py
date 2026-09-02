@@ -281,7 +281,7 @@ CORE_TOOLS: tuple[ToolDefinition, ...] = (
         description=(
             "点击当前观察中的目标区域，并校验业务结果。"
             "button 可选 right 打开右键菜单、middle 中键点击；click_count 传 2 表示双击。"
-            "expect_kind/expect_value 可省略，缺省按“页面有变化”校验（自动绑定当前观察）；"
+            "expect_kind/expect_value 可省略，缺省按“页面有变化”校验(自动绑定当前观察)；"
             "知道业务结果时优先给 url_contains / text_contains，判据更强"
         ),
         category="element",
@@ -313,7 +313,7 @@ CORE_TOOLS: tuple[ToolDefinition, ...] = (
     ToolDefinition(
         name="input_text",
         description=(
-            "向目标输入文本并回读确认写入。敏感值（账号、密码、令牌）只能用 input_key 引用"
+            "向目标输入文本并回读确认写入。敏感值(账号、密码、令牌)只能用 input_key 引用"
             "任务输入，明文不进参数；搜索词、备注这类非敏感字面量直接给 text。"
             "input_key 与 text 二选一"
         ),
@@ -886,7 +886,8 @@ LOCATOR_TOOLS: tuple[ToolDefinition, ...] = (
         name="click_locator",
         description=(
             "候选 target_id 不可用时，以 CSS、XPath、role、text、label 或 test_id 定位并点击；"
-            "同样支持 button 与 click_count。expect_kind/expect_value 可省略，缺省按“页面有变化”校验"
+            "同样支持 button 与 click_count。"
+            "expect_kind/expect_value 可省略，缺省按“页面有变化”校验"
         ),
         category="element",
         properties={

@@ -1010,9 +1010,9 @@ def test_observe_fuses_ax_and_dom_candidates_with_backend_dedup(tmp_path: Path) 
         backend_node_ids = [
             candidate.recipe.backend_node_id for candidate in observation.candidates
         ]
-        assert backend_node_ids[0] == 10
-        assert set(backend_node_ids) == {10, 20, 30}
-        ax_candidate = observation.candidates[0]
+        # 可输入控件排最前(搜索框 20)，随后是按钮：AX 按钮 10 在前、DOM 补充的 30 在后。
+        assert backend_node_ids == [20, 10, 30]
+        ax_candidate = observation.candidates[1]
         dom_candidate = next(
             candidate
             for candidate in observation.candidates

@@ -1,6 +1,6 @@
 # Witty 浏览器工具库项目状态
 
-- 更新时间：`2026-09-02 11:30 CST`
+- 更新时间：`2026-09-02 15:10 CST`
 - 当前阶段：`阶段 2 - 面向外部大模型智能体的纯工具库`
 - 项目定位：本仓库是给**外部大模型智能体**调用的确定性浏览器工具库。仓库内不存在任何发起模型请求的代码；由外部智能体（Codex、Claude、Cursor 等）决定下一步，本库保证每一步的正确性——参数校验、业务后置条件、脱敏、非幂等防重放、安全挑战约束、批量采集完整性门全部由固定代码执行。两条接入方式：能执行 Python 的智能体走 `witty_browser_auto.toolkit.launch_browser_toolkit` 并读 `skills/use-browser-toolkit/SKILL.md`；不能执行代码或非 Python 的框架走 `witty-browser-auto mcp` 的 MCP stdio 服务端。使用文档是 `skills/use-browser-toolkit/SKILL.md`（64 个开放工具全部有示例，契约测试强制文档与工具面一致）。
 - 状态定义：`已实现`、`部分实现`、`未实现`、`阻塞`、`已移除`
@@ -22,8 +22,8 @@ import 层面已验证：加载 `witty_browser_auto.toolkit` 的完整闭包不�
 | --- | --- | --- | --- |
 | T-001 | 自研 CDP 内核 | 已实现 | `cdp/`：WebSocket 命令关联、事件路由、超时、断线清理、Target Session 生命周期；运行依赖仅 `aiohttp` |
 | T-002 | 浏览器生命周期 | 已实现 | 受管可见 Chrome、按作用域隔离的持久 profile、回环 CDP 端口；`takeover` 模式经 Chrome 原生远程调试接管日常浏览器，不启动新进程 |
-| T-003 | 页面观察与定位 | 已实现 | AX+DOM 候选、六类显式定位器（唯一性与稳定/可见/命中校验）、iframe 帧作用域（同站 isolated world、跨站 OOPIF 二次接管）、Shadow DOM 穿透 |
-| T-004 | 页面操作工具族 | 已实现 | 点击（左/右/双击）、输入、选择、悬停、滚动、按键组合、表单批量填写（逐字段回读校验）、元素双通道拖放（HTML5/指针自动择路）、页面历史（含 bfcache）、原生对话框接管、环境模拟（设备/网络/时区/地理/深浅色） |
+| T-003 | 页面观察与定位 | 已实现 | AX+DOM 候选、六类显式定位器（唯一性与稳定/可见/命中校验）、iframe 帧作用域（同站 isolated world、跨站 OOPIF 二次接管）、Shadow DOM 穿透。**候选次序由 `browser/ranking.py` 统一**：可输入控件 > 其它控件 > 链接，视口内优先，再按置信度，最后保持文档顺序；驱动截断（400 个可寻址）、模型视图截断（24 个）与标注截图编号三处复用同一次序。**页面状态指纹覆盖候选、可见文本与可见图片**且与候选顺序无关 |
+| T-004 | 页面操作工具族 | 已实现 | 点击（左/右/双击）、输入（`input_key` 引用敏感值 / `text` 非敏感字面量，与任务输入值撞车即拒）、选择、悬停、滚动、按键组合、表单批量填写（逐字段回读校验）、元素双通道拖放（HTML5/指针自动择路）、页面历史（含 bfcache）、原生对话框接管、环境模拟（设备/网络/时区/地理/深浅色）。**`click`/`hover`/`select`/`press_key`/`navigate_history` 及定位器版本的后置条件可省略**，门面缺省补 `fingerprint_changed` 并绑定当前观察；**页面动作收口后门面立即重新观察并随结果返回 `observation`**，一个智能体步只需一次工具调用 |
 | T-005 | 结构化采集 | 已实现 | 只读结构分析 + 确定性整页采集：页码/下一页/加载更多/无限滚动/逐条详情；完整性门要求声明总数闭合或稳定终点，弱证据一律不判成功；产物 0600 JSON/CSV。真实订单页曾闭合 9 页 87/87 条详情 |
 | T-006 | 已验证采集程序库 | 已实现 | 成功规格经存储前验证门（重进入口 + 结构探针）晋升，按 `作用域+场景+路径模板+结构指纹` 落 SQLite；`replay_collection_program` 零决策重放，失配降权回退并返回明确原因；任务输入值禁止固化，连续失败自动禁用。**本轮已从引擎终态挪到工具库路径：`run_structured_extraction` 成功即自动晋升，重放成为外部可调用工具** |
 | T-007 | 网络流量检查 | 已实现 | 全部资源类型的请求/响应头（合并 extraInfo）、六段 timing、initiator、重定向链、TLS 与证书详情（`securityDetails` 归一化，SAN 有界）、WebSocket 帧、SSE 消息（`eventSourceMessageReceived` 逐条记录，长连接不关闭也能读）；正文/头/帧/SSE 全文搜索定位来源；超过内存上限的大响应落 0600 私有文件（单体 64 MiB、全局 256 MiB 双上限），`read_network_body` 返回路径；HAR 1.2 导出含 `_websockets`、`_serverSentEvents`、`_securityDetails`；页面会话内请求重放（复用 Cookie/TLS，逐跳头过滤，Host 重写 authority） |
@@ -36,8 +36,8 @@ import 层面已验证：加载 `witty_browser_auto.toolkit` 的完整闭包不�
 | T-014 | 工具契约单一事实源 | 已实现 | `toolkit/catalog.py` 声明全部 68 个工具（64 个开放 + 4 个保留终态语义定义)；registry 派生 schema 与执行前校验。SKILL.md 已按渐进披露重写：主文档（触发描述、纪律、选路决策、工具速查、高频示例）+ 4 个 `references/` 深指南，契约测试对主文档与参考文件全量做签名绑定、500 行预算与双向指引校验 |
 | T-015 | URL 记忆 | 部分实现 | SQLite 按项目/租户/账号/场景隔离，后台异步读写；采集程序库在用；记忆版本、显式失效、加密和保留策略待补 |
 | T-016 | Skills/MCP 扩展 | 部分实现 | `extensions/` 保留 stdio MCP 客户端与 Skills 加载（无模型依赖）；当前 toolkit 装配默认不启用，需调用方显式注入 |
-| T-017 | 外部框架消费接口 | 已实现 | `toolkit/serialization.py` 承担观察与工具结果通往模型的唯一出口：`observation_to_dict`/`observation_to_prompt` 输出 JSON 安全结构与紧凑文本（候选按置信度截断到 24 个、逐字列出 target_id、显式标注截断），`tool_result_to_dict` 分调用方/模型两路视图并保留 `failure_kind` 与后置条件结论；`BrowserToolkit.observe_for_model` 一步到位。`tool_schemas()`/`describe_tools()` 默认只给 64 个可外部调用工具，终态工具需显式取用；顶层 `witty_browser_auto` 直接导出 schema、序列化函数与异常类型 |
-| T-018 | MCP stdio 服务端 | 已实现 | `mcp_server/`：标准库实现的换行分隔 JSON-RPC（协议 `2025-06-18`）、`initialize`/`tools/list`/`tools/call`/`ping`；`core`/`all` 两个工具档位加分类与追加过滤，避免 64 个 schema 撑爆客户端上下文；MCP 特有的 `open_browser`/`observe`/`close_browser` 三个会话工具；协议问题回 JSON-RPC error 而工具失败回 `isError`，连接不中断；`witty-browser-auto mcp` 子命令支持 origin 授权与经文件注入的敏感输入，日志固定走 stderr 以免破坏 stdout 分帧。未实现 resources/prompts/sampling 与 Streamable HTTP |
+| T-017 | 外部框架消费接口 | 已实现 | `toolkit/serialization.py` 承担观察与工具结果通往模型的唯一出口：`observation_to_dict`/`observation_to_prompt` 输出 JSON 安全结构与紧凑文本（候选按统一次序截断到 24 个、逐字列出 target_id、显式标注截断），`tool_result_to_dict` 分调用方/模型两路视图并保留 `failure_kind` 与后置条件结论，**结果带动作后观察时以 `page` 字段给出（与 `observation_to_dict` 同形，`include_page`/`page_max_candidates`/`page_roles` 控制预算）**；`BrowserToolkit.observe_for_model` 一步到位。`tool_schemas()`/`describe_tools()` 默认只给 64 个可外部调用工具，终态工具需显式取用；顶层 `witty_browser_auto` 直接导出 schema、序列化函数与异常类型 |
+| T-018 | MCP stdio 服务端 | 已实现 | `mcp_server/`：标准库实现的换行分隔 JSON-RPC（协议 `2025-06-18`）、`initialize`/`tools/list`/`tools/call`/`ping`；`core`/`all` 两个工具档位加分类与追加过滤，避免 64 个 schema 撑爆客户端上下文；MCP 特有的 `open_browser`/`observe`/`close_browser` 三个会话工具；**页面动作的返回文本自带 `page` 快照，`initialize.instructions` 与 `observe` 描述明确告知客户端动作之间不必再 observe**；协议问题回 JSON-RPC error 而工具失败回 `isError`，连接不中断；`witty-browser-auto mcp` 子命令支持 origin 授权与经文件注入的敏感输入，日志固定走 stderr 以免破坏 stdout 分帧。未实现 resources/prompts/sampling 与 Streamable HTTP |
 | T-019 | 多模态标注截图 | 已实现 | `browser/annotation.py` + `capture_annotated_screenshot`：把观察候选按置信度编号画在视口截图上，图例将编号对回 `target_id`，解决"模型在图上看见按钮但不知道该用哪个 target_id"。覆盖层 `pointer-events:none`、不碰业务节点、不滚动页面、`finally` 必除；图例只保留真正画上去的编号，视口外候选不入图例；模型视图不含截图本机路径 |
 | T-020 | 页面正文 Markdown 与链接清单 | 已实现 | `browser/page_content.py` + `read_page_markdown`/`list_page_links`：主内容容器自动判定（语义标签优先，退化到文本量减链接密度惩罚），剥离导航/页眉页脚/侧栏/隐藏节点与表单控件，保留标题层级、嵌套列表、代码块、GFM 表格与绝对地址行内链接；默认 40000 字符上限，截断时仍如实报告页面真实总长。Markdown 进模型视图（这是它存在的意义），但重复结构化记录仍必须走结构化采集。`list_page_links` 给出绝对地址、去重、同源与子串过滤，作为调用方自行编排站内遍历的起点；本库不做整站爬取、不读 robots.txt、不做全局限速。转换保真度由真实 Chrome 集成测试证明 |
 | T-021 | 抓取策略与限速 | 已实现 | `network/robots.py` 自实现 robots.txt 解析与匹配（`*` 通配、`$` 锚定、最长优先、同长 Allow 胜出；4xx 放行、5xx 与取不到判状态未知而非放行）；`browser/pacing.py` 按主机最小间隔限速，生效值取站点声明与调用方配置的较大者。`check_crawl_policy` 给出判定、Crawl-delay 与 Sitemap。**默认纯咨询**——robots.txt 约束抓取，而本库也用于交互场景，默认拦截会挡掉正当用途；装配时打开 `respect_robots` 后 `navigate`/`open_tab` 按判定硬拦并自动限速。判据由真实 Chrome 集成测试按“服务端收到过哪些路径”验证 |
@@ -47,7 +47,19 @@ import 层面已验证：加载 `witty_browser_auto.toolkit` 的完整闭包不�
 | R-003 | 评测驱动自我进化与模型补丁链 | 已移除 | 同上 |
 | R-004 | 本机配置中心 UI | 已移除 | 配置收敛为 `.witty-browser-auto/config.json` + 环境变量；`witty-browser-auto doctor` 自检浏览器与存储 |
 
-## 本轮已完成（2026-08-28 架构收敛）
+## 本轮已完成（2026-09-02 智能体交互回合成本）
+
+用真实 Chrome 对 260 个可操作元素的页面做基准，量化了外部智能体每一步付出的交互成本，并修掉四项：
+
+- **`fingerprint_changed` 对纯文本变化失明**：指纹只含候选清单，点击只改文字的按钮（展开/加购计数/状态文案）被判失败并烧完 4 秒校验超时——实测 4046 ms、21779 次 CDP 往返。指纹加入折叠空白后的前 3000 字可见文本；同一动作实测 109 ms、1069 次往返、判定成功。指纹同时改为与候选顺序无关（`sorted`），滚动/聚焦引起的重排不再误判为页面变化。
+- **每步两次工具调用 → 一次**：此前动作成功后门面只把观察置空，智能体必须再调一次 `observe` 才能拿到新 target_id，而校验阶段其实已经观察过并丢弃。现在页面动作（含成功的 `wait_for_condition`）收口后门面立刻重新观察，新 `Observation` 挂在 `ToolExecutionResult.observation` 并序列化为 `page`。实测两个连续智能体步（点按钮 → 从 `result.observation` 取"下一页" → 点击导航）零次 `observe`、111 ms。
+- **后置条件不再强制**：`click`/`hover`/`select`/`press_key`/`navigate_history` 与定位器版本的 `expect_kind`/`expect_value` 从必填改为可选，缺省由门面补 `fingerprint_changed` 并绑定当前观察指纹；显式业务判据仍优先。契约基线测试（放宽必填属兼容变更）通过。
+- **`input_text` 支持非敏感字面量**：新增 `text` 参数（与 `input_key` 二选一，`input_text_locator` 同步），搜索词、备注不必绕道 `fill_form`；字面量与任何任务输入值相同即按 policy 拒绝，防止模型把凭据抄进参数。字面量输入不进快速路径 `PlanStep`。
+- **候选次序**：新增 `browser/ranking.py`，可输入控件 > 其它控件 > 链接、视口内优先、再置信度、最后文档顺序；驱动截断上限 200 → 400（可寻址数，非模型视图）。此前按"置信度、角色字母序"排，搜索框（DOM 补充候选 0.68）会被两百个 0.95 的导航链接挤出 24 个视图。标注截图编号改用同一次序，图上第几号与文字清单第几项一致。
+- 文档同步：SKILL.md 六条纪律的 1/2/3 条、点击输入示例、喂回模型一节、MCP 一节；ARCHITECTURE 第 5/8 节；README；MCP `initialize.instructions` 与 `observe` 描述。
+- 验证：全量 `737 passed, 46 skipped`；真实浏览器集成套件 `46 passed`（`WITTY_BROWSER_AUTO_RUN_BROWSER_TESTS=1`）；新增 13 项单测（指纹文本敏感、结果附带观察、可关闭、观察失败不掩盖动作、等待成功刷新、缺省后置条件、显式优先、半指定拒绝、字面量输入与凭据撞车、契约可选性、排序两项、MCP `page`）；SKILL 契约测试 9 项通过；真实 Chrome 基准复跑确认上述数字。`tests/test_network_capture.py::test_network_capture_records_request_shape_and_duration` 偶发失败一次（断言 `"abc" not in serialized`，而 `candidate_id` 是 sha256 十六进制，含 `abc` 子串属概率事件），与本轮改动无关，复跑三次均通过。
+
+## 上一轮已完成（2026-08-28 架构收敛）
 
 - **删除全部模型调用代码**：`model/`、引擎循环 16 个模块、`workbench/`、`config_ui/`、`desktop/`、`evolution/`、`pi_runtime.py`、`application.py`、`runtime/` 循环状态存储全部移出仓库（外部备份可还原）。`agent/` 收敛为纯工具执行层，`agent/__init__.py` 不再有拉起引擎的包副作用——此前 `import witty_browser_auto.toolkit` 会在 import 时加载整个模型栈，现已验证闭包干净。
 - **配置与领域模型去模型化**：删除 `ModelConfig`、全部 `WITTY_BROWSER_AUTO_MODEL_*` 环境变量、`ModelGateway` 协议、`TaskSpec.model_profiles`；`RuntimeConfig` 只留 `log_level`。CLI 收敛为 `version` + `doctor`（浏览器/存储自检，无模型检查）。

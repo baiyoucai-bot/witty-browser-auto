@@ -288,8 +288,10 @@ def test_real_chrome_opens_and_closes_a_task_owned_tab(tmp_path: Path) -> None:
                 assert opened.success, opened.message
                 target_id = opened.data["target_id"]
 
-                # 打开后当前页已经切换，旧观察必须作废。
-                assert toolkit.observation is None
+                # 打开后当前页已经切换：结果自带新页的观察，门面缓存也换成了它。
+                assert opened.observation is not None
+                assert "/detail" in opened.observation.url
+                assert toolkit.observation is opened.observation
                 detail = await toolkit.observe()
                 assert "/detail" in detail.url
 

@@ -162,7 +162,7 @@ def observation_to_prompt(
             else str(len(selected))
         )
         lines.append(
-            f"可操作候选 {scope} 项（输入框与控件在前、链接在后、视口内优先），"
+            f"可操作候选 {scope} 项(输入框与控件在前、链接在后、视口内优先)，"
             "target_id 必须逐字使用："
         )
         for item in selected:
@@ -198,8 +198,8 @@ def tool_result_to_dict(
     含 `data` 与证据文件路径。两种视图都带上 `failure_kind` 与后置条件校验结论——
     这两项决定下一步该重试、换路还是停下，缺了模型只能瞎猜。
 
-    结果若带有动作后的新观察，会以 `page` 字段给出（与 `observation_to_dict` 同一
-    形状），其中的 `target_id` 可直接用于下一步元素工具，不必再调一次 observe。
+    结果若带有动作后的新观察，会以 `page` 字段给出(与 `observation_to_dict` 同一
+    形状)，其中的 `target_id` 可直接用于下一步元素工具，不必再调一次 observe。
     """
 
     payload: dict[str, Any] = {

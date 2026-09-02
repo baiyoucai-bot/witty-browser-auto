@@ -308,7 +308,9 @@ def test_result_dict_carries_the_post_action_page_snapshot() -> None:
     """动作后的新观察随结果给出，模型直接拿 page.candidates 里的 target_id 走下一步。"""
 
     observation = _observation(
-        candidates=tuple(_candidate(f"t-{index}", confidence=1 - index / 100) for index in range(30))
+        candidates=tuple(
+            _candidate(f"t-{index}", confidence=1 - index / 100) for index in range(30)
+        )
     )
     result = _result(observation=observation)
 

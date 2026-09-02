@@ -14,6 +14,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from witty_browser_auto.browser.ranking import rank_candidates
+
 CONTAINER_ID = "__witty_browser_auto_annotation_layer__"
 DEFAULT_MAX_LABELS = 24
 MAX_LABELS = 50
@@ -65,15 +67,17 @@ def build_annotation_labels(
     max_labels: int = DEFAULT_MAX_LABELS,
     roles: Sequence[str] = (),
 ) -> tuple[AnnotationLabel, ...]:
-    """给候选编号；只保留有可见矩形的候选，按置信度取前 `max_labels` 个。
+    """给候选编号；只保留有可见矩形的候选，按与观察相同的次序取前 `max_labels` 个。
 
-    编号从 1 开始且与返回顺序一致，图例与图上的数字因此永远对得上。
+    编号从 1 开始且与返回顺序一致，图例与图上的数字因此永远对得上；次序与 `observe`
+    的候选清单一致(控件在前、链接在后、再按置信度)，模型在文字清单里排第几、在图上
+    看到的就是几号。
     """
 
     if not 1 <= max_labels <= MAX_LABELS:
         raise ValueError(f"标注数量必须在 1 到 {MAX_LABELS} 之间")
     wanted = {role.casefold() for role in roles}
-    usable = []
+    usable: list[Any] = []
     for candidate in candidates:
         box = getattr(candidate, "box", None)
         if box is None or box.width <= 0 or box.height <= 0:
@@ -81,7 +85,7 @@ def build_annotation_labels(
         if wanted and candidate.role.casefold() not in wanted:
             continue
         usable.append(candidate)
-    usable.sort(key=lambda item: item.confidence, reverse=True)
+    ranked: list[Any] = rank_candidates(usable)
     return tuple(
         AnnotationLabel(
             label=index,
@@ -93,7 +97,7 @@ def build_annotation_labels(
             width=float(candidate.box.width),
             height=float(candidate.box.height),
         )
-        for index, candidate in enumerate(usable[:max_labels], start=1)
+        for index, candidate in enumerate(ranked[:max_labels], start=1)
     )
 
 

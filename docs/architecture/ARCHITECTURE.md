@@ -87,9 +87,10 @@
   -> registry 按 catalog 声明做执行前校验（未知参数、类型、边界、白名单）
   -> 敏感值在最后一刻由 inputs 键名解析
   -> 只读工具直接执行；写动作检查 read_only 门控与观察版本
-  -> 副作用动作的业务后置条件必须在动作前为假
+  -> 副作用动作的业务后置条件必须在动作前为假；未声明时门面补上 fingerprint_changed 并绑定当前观察
   -> 串行派发动作，取得 ActionReceipt
   -> 重新观察并校验 VerificationResult
+  -> 页面动作收口后门面再观察一次，新 Observation 随 ToolExecutionResult.observation 返回
   -> 返回 ToolExecutionResult（成功与否都是返回值）
 ```
 
@@ -97,6 +98,8 @@
 
 - **失败是返回值不是异常**。只有参数非法在本地抛 `ToolArgumentError`；业务失败通过 `success=False` 加可行动的中文原因返回，并带 `failure_kind` 与 `verification`——这两项决定调用方下一步是重试、换路还是停下。
 - **动作回执不等于业务成功**。`ActionReceipt` 只说明命令是否送达，`VerificationResult` 才说明业务结果。
+- **页面状态指纹覆盖候选、可见文本与可见图片**，且与候选展示顺序无关。只改文字的点击（展开、加购计数、状态文案）必须被 `fingerprint_changed` 看见，否则成功动作会被判失败并耗尽校验超时；滚动或聚焦引起的候选重排则不算页面变化。
+- **每个智能体步只需一次工具调用**。页面动作（含成功的 `wait_for_condition`）收口后，`BrowserToolkit` 立即重新观察并把新 `Observation` 挂到结果上（`result.observation`；序列化为 `page`），同时替换门面缓存；调用方不必在动作之间插入 `observe`。观察失败只丢快照、不改动作结论。装配参数 `refresh_observation_after_action=False` 退回惰性观察。
 - **非幂等动作（提交、购买、关标签页、请求重放）失败或结果未知时不自动重试**，必须由调用方再次显式发起。只读语义（查询、筛选、翻页、刷新）可在重新观察后有界重试。
 - **两路视图分离**。`data` 给调用方完整结果，`model_data` 给有界脱敏视图；原始业务行、完整正文、完整 Header 值和本机路径不进模型视图。未声明 `model_data` 的工具回退到调用方数据并标记 `data_is_caller_view`。
 - **终态与等待语义**（`finish`/`ask_user`/`block`/`wait_until`）只保留契约定义供兼容性校验，不可外部调用，也不出现在门面上：完成与否由调用方判断，等待用 `wait_for_condition`。
@@ -131,7 +134,7 @@ URL 记忆按 `project_id`、`tenant_id`、`site_origin`、`account_id` 强隔�
 
 ## 8. 两条接入通道
 
-**Python API** 是主通道：`launch_browser_toolkit()` 一步装配配置、profile 隔离、网络捕获、结构化采集器与采集程序库，退出时自动关浏览器；`build_browser_toolkit()` 供自管生命周期使用。`toolkit/serialization.py` 是观察与工具结果通往模型的唯一出口——`Observation` 与 `ToolExecutionResult` 是带 `datetime` 和枚举的 dataclass，`json.dumps(asdict(...))` 会直接抛错，且候选上限 200 个原样入上下文足以吃满一次请求，因此序列化同时承担 token 预算：候选按置信度排序后默认截断到 24 个，真实总数与截断事实一并返回。"给模型看什么、截断到多少"是消费侧策略，领域层不感知提示词与 token 预算。
+**Python API** 是主通道：`launch_browser_toolkit()` 一步装配配置、profile 隔离、网络捕获、结构化采集器与采集程序库，退出时自动关浏览器；`build_browser_toolkit()` 供自管生命周期使用。`toolkit/serialization.py` 是观察与工具结果通往模型的唯一出口——`Observation` 与 `ToolExecutionResult` 是带 `datetime` 和枚举的 dataclass，`json.dumps(asdict(...))` 会直接抛错，且一次观察最多登记 400 个可寻址候选、原样入上下文足以吃满一次请求，因此序列化同时承担 token 预算：候选默认截断到 24 个，真实总数与截断事实一并返回。截断前的次序由 `browser/ranking.py` 统一定义并在驱动截断、模型视图与标注截图三处复用：可输入控件 > 其它控件 > 链接，同组内视口内优先，再按置信度，最后保持文档顺序——按"置信度、角色字母序"排会让两百个导航链接把搜索框挤出视野。"给模型看什么、截断到多少"是消费侧策略，领域层不感知提示词与 token 预算。
 
 **MCP stdio 服务端**服务于不能执行代码或非 Python 的框架。协议 `2025-06-18`，用标准库实现换行分隔 JSON-RPC，不引入新依赖。`core`/`all` 两个工具档位加分类与追加过滤，避免全部 schema 撑爆客户端上下文；另有 MCP 特有的 `open_browser`/`observe`/`close_browser` 三个会话工具——Python 侧用 `async with`，MCP 客户端只能靠两次调用，而 `observe` 在库内是门面方法不是注册工具，不显式暴露客户端就拿不到 `target_id`。
 

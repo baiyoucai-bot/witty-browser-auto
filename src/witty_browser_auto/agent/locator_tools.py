@@ -111,7 +111,7 @@ def resolve_text_input(arguments: Mapping[str, Any], task: TaskSpec) -> tuple[st
             raise ValueError(f"任务输入键不存在：{input_key}")
         return str(task.inputs[input_key]), input_key
     if not has_text:
-        raise ValueError("必须提供 input_key（敏感值）或 text（非敏感字面量）之一")
+        raise ValueError("必须提供 input_key(敏感值)或 text(非敏感字面量)之一")
     text = arguments.get("text")
     if not isinstance(text, str) or not text.strip():
         raise ValueError("text 必须是非空字符串")

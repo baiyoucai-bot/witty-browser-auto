@@ -208,6 +208,12 @@ def _pointer_candidate_name(
     return name or text
 
 
+# 一次观察最多登记多少个可寻址候选。这是"能用 target_id 指到谁"的上限，不是喂给模型的
+# 数量——模型视图另有 24 个的预算(见 toolkit.serialization)。长列表页动辄两三百个链接，
+# 200 会把页脚的"下一页"挤掉；400 在候选缓存与指纹计算上仍然很便宜。
+MAX_OBSERVATION_CANDIDATES = 400
+
+
 def _observation_fingerprint(
     url: str,
     title: str,
@@ -2365,7 +2371,9 @@ class CdpAutomationDriver:
                 )
             )
         # 截断前先按智能体的需要排：可输入控件 > 其它控件 > 链接，视口内优先，再看置信度。
-        return rank_candidates(candidates, viewport_height=viewport_height)[:200]
+        return rank_candidates(candidates, viewport_height=viewport_height)[
+            :MAX_OBSERVATION_CANDIDATES
+        ]
 
     @staticmethod
     def _pointer_target_values(result: dict[str, Any]) -> list[Any]:

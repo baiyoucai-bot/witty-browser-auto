@@ -47,7 +47,7 @@ asyncio.run(main())
 witty-browser-auto mcp --profile core --allow-origin https://example.com --input-file ./inputs.json
 ```
 
-MCP 侧的调用顺序是 `open_browser` → `observe` → 各类工具 → `close_browser`。`observe` 返回候选与 `target_id`（元素类工具必须逐字引用）。敏感值经 `--input`/`--input-file` 注入，工具参数只写键名。
+MCP 侧的调用顺序是 `open_browser` → `observe` → 各类工具 → `close_browser`。`observe` 返回候选与 `target_id`（元素类工具必须逐字引用）；每个页面动作的结果自带 `page`——动作后的新观察——所以一个智能体步只需一次工具调用，不必再 `observe`。`click` 等动作可以不给后置条件，缺省按"页面有变化"校验。敏感值经 `--input`/`--input-file` 注入，工具参数只写键名；非敏感字面量直接给 `input_text` 的 `text`。
 
 把观察与工具结果送进你自己的模型时用这三个转换函数，它们同时承担 token 预算：
 
@@ -61,8 +61,8 @@ tool_result_to_dict(result)          # 保留 failure_kind 与后置条件结论
 
 ## 能力总览
 
-- **页面观察与定位**：AX+DOM 候选、CSS/XPath/role/text/label/test-id 显式定位、iframe 帧作用域、Shadow DOM 穿透。
-- **页面操作**：点击（左/右/双击）、输入、选择、悬停、滚动、按键组合、表单批量填写、元素到元素双通道拖放、页面历史。
+- **页面观察与定位**：AX+DOM 候选（可输入控件 > 控件 > 链接、视口内优先的稳定次序）、CSS/XPath/role/text/label/test-id 显式定位、iframe 帧作用域、Shadow DOM 穿透。
+- **页面操作**：点击（左/右/双击）、输入（敏感值键名引用 / 非敏感字面量）、选择、悬停、滚动、按键组合、表单批量填写、元素到元素双通道拖放、页面历史；每个动作结果自带动作后的新观察，一步一调。
 - **结构化采集**：只读结构分析 + 确定性整页采集（页码/下一页/加载更多/无限滚动/逐条详情），完整性门要求声明总数或稳定终点闭合；成功规格经"重进入口 + 结构探针"验证门晋升为**可重放采集程序**，同场景第二次采集零决策重放，站点改版自动失配回退并降权。
 - **网络能力**：完整流量检查（全部资源类型、timing、initiator、WebSocket 帧）、HAR 导出、请求重放、接口契约剖析、curl/requests/httpx/fetch/axios 代码导出、沿 page/offset/cursor 三策略的主动分页采集（强制闭合证据）。
 - **会话与状态**：Cookie/Web Storage 受控读写、Playwright 兼容的会话态整体导出导入、文件上传、下载接管。
