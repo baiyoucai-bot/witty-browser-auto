@@ -1,0 +1,16 @@
+.DS_Store
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+artifacts/
+docs/change_maintenance/artifacts/
+.witty-browser-auto/
+outputs/
+# agent 会话状态，属本机运行态，不随仓库发布
+.omx/

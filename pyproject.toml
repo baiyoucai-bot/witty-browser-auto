@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=78"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "witty-browser-auto"
+version = "0.1.0"
+description = "Witty 浏览器工具库：面向外部智能体的本机 CDP 浏览器能力"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "aiohttp>=3.11,<4",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.15,<2",
+  "pytest>=8.3,<9",
+  "ruff>=0.11,<1",
+]
+
+[project.scripts]
+witty-browser-auto = "witty_browser_auto.cli:main"
+witty-browser-auto-demo = "witty_browser_auto.demo_server:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+witty_browser_auto = [
+    "py.typed",
+]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+pythonpath = ["src"]
+testpaths = ["tests"]
+markers = ["browser: 需要本机 Chrome/Chromium 的原生 CDP 契约测试"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "RUF"]
+allowed-confusables = ["，", "：", "；"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["witty_browser_auto"]

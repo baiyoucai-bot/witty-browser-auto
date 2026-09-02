@@ -1,0 +1,4 @@
+interface:
+  display_name: "Witty 浏览器工具库"
+  short_description: "开发供外部大模型智能体调用的确定性浏览器工具库"
+  default_prompt: "使用 $build-witty-browser-auto 持续实现并验证Witty 浏览器工具库的下一项能力。"

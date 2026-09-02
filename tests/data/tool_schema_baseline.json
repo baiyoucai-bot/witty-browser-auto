@@ -1,0 +1,1254 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "navigate",
+      "description": "导航到任务授权范围内的网页",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "visual_click",
+      "description": "仅在多模态截图能看见目标但语义候选中没有 target_id 时使用；按当前视口比例坐标点击，并绑定当前观察、截图和视觉置信度",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "observation_fingerprint": {
+            "type": "string"
+          },
+          "screenshot_fingerprint": {
+            "type": "string"
+          },
+          "x_ratio": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "y_ratio": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "visual_confidence": {
+            "type": "number",
+            "minimum": 0.8,
+            "maximum": 1
+          },
+          "expect_kind": {
+            "type": "string",
+            "enum": [
+              "url_contains",
+              "title_contains",
+              "text_contains"
+            ]
+          },
+          "expect_value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "observation_fingerprint",
+          "screenshot_fingerprint",
+          "x_ratio",
+          "y_ratio",
+          "visual_confidence",
+          "expect_kind",
+          "expect_value"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "inspect_visual_region",
+      "description": "当验证码、图标或局部文字在整页截图中过小时，按当前视口比例裁剪并放大；这是只读观察，放大图只在下一轮模型决策中临时提供",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "observation_fingerprint": {
+            "type": "string"
+          },
+          "screenshot_fingerprint": {
+            "type": "string"
+          },
+          "x_ratio": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "y_ratio": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "width_ratio": {
+            "type": "number",
+            "minimum": 0.05,
+            "maximum": 1
+          },
+          "height_ratio": {
+            "type": "number",
+            "minimum": 0.05,
+            "maximum": 1
+          },
+          "visual_confidence": {
+            "type": "number",
+            "minimum": 0.8,
+            "maximum": 1
+          }
+        },
+        "required": [
+          "observation_fingerprint",
+          "screenshot_fingerprint",
+          "x_ratio",
+          "y_ratio",
+          "width_ratio",
+          "height_ratio",
+          "visual_confidence"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "visual_drag",
+      "description": "仅在多模态截图中没有语义目标时使用；按当前视口比例坐标拖拽，必须绑定当前观察指纹和视觉置信度。安全挑战失败后必须切换motion_profile 或 geometry_mode，重复策略会在执行前被拒绝且不消耗次数",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "observation_fingerprint": {
+            "type": "string"
+          },
+          "screenshot_fingerprint": {
+            "type": "string"
+          },
+          "start_x_ratio": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "start_y_ratio": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "end_x_ratio": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "end_y_ratio": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 5000
+          },
+          "steps": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 120
+          },
+          "motion_profile": {
+            "type": "string",
+            "enum": [
+              "balanced",
+              "steady",
+              "ease_out",
+              "hesitant"
+            ],
+            "description": "运动策略；失败重试必须选择尚未失败的策略"
+          },
+          "geometry_mode": {
+            "type": "string",
+            "enum": [
+              "track",
+              "model"
+            ],
+            "description": "track 使用代码轨道几何；model 使用当前截图坐标并接受轨道边界校验"
+          },
+          "visual_confidence": {
+            "type": "number",
+            "minimum": 0.8,
+            "maximum": 1
+          },
+          "security_challenge": {
+            "type": "boolean"
+          },
+          "expect_kind": {
+            "type": "string",
+            "enum": [
+              "url_contains",
+              "title_contains",
+              "text_contains"
+            ]
+          },
+          "expect_value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "observation_fingerprint",
+          "screenshot_fingerprint",
+          "start_x_ratio",
+          "start_y_ratio",
+          "end_x_ratio",
+          "end_y_ratio",
+          "duration_ms",
+          "steps",
+          "visual_confidence",
+          "security_challenge",
+          "expect_kind",
+          "expect_value"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "drag",
+      "description": "从当前目标中心按平滑轨迹拖拽；普通业务滑块可直接使用，安全挑战必须显式标记且任务已授权",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "target_id": {
+            "type": "string"
+          },
+          "end_dx": {
+            "type": "number",
+            "minimum": -3000,
+            "maximum": 3000,
+            "description": "终点相对目标中心的水平 CSS 像素偏移"
+          },
+          "end_dy": {
+            "type": "number",
+            "minimum": -3000,
+            "maximum": 3000,
+            "description": "终点相对目标中心的垂直 CSS 像素偏移"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 5000
+          },
+          "steps": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 120
+          },
+          "security_challenge": {
+            "type": "boolean",
+            "description": "目标属于验证码或真人验证时必须为 true"
+          },
+          "expect_kind": {
+            "type": "string",
+            "enum": [
+              "challenge_ready",
+              "url_contains",
+              "title_contains",
+              "text_contains",
+              "target_exists"
+            ]
+          },
+          "expect_value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_id",
+          "end_dx",
+          "end_dy",
+          "duration_ms",
+          "steps",
+          "security_challenge",
+          "expect_kind",
+          "expect_value"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "click",
+      "description": "点击当前观察中的目标区域，并校验业务结果",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "target_id": {
+            "type": "string"
+          },
+          "expect_kind": {
+            "type": "string",
+            "enum": [
+              "url_contains",
+              "title_contains",
+              "text_contains",
+              "target_exists",
+              "fingerprint_changed"
+            ]
+          },
+          "expect_value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_id",
+          "expect_kind",
+          "expect_value"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "input_text",
+      "description": "把任务输入键对应的值输入目标，不得直接传入密码或业务值；只传 target_id 和 input_key，执行器会回读输入框确定写入成功",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "target_id": {
+            "type": "string"
+          },
+          "input_key": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_id",
+          "input_key"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "input_generated_text",
+      "description": "把模型从当前多模态截图识别出的非敏感短文本输入目标；不得用于账号、密码或其他任务输入，不会写入快速路径",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "target_id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "observation_fingerprint": {
+            "type": "string"
+          },
+          "screenshot_fingerprint": {
+            "type": "string"
+          },
+          "visual_confidence": {
+            "type": "number",
+            "minimum": 0.8,
+            "maximum": 1
+          },
+          "security_challenge": {
+            "type": "boolean",
+            "description": "文本来自验证码或真人验证图片时必须为 true"
+          }
+        },
+        "required": [
+          "target_id",
+          "text",
+          "observation_fingerprint",
+          "screenshot_fingerprint",
+          "visual_confidence",
+          "security_challenge"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "select",
+      "description": "选择下拉值并校验结果；值可来自安全静态值或任务输入键",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "target_id": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "input_key": {
+            "type": "string"
+          },
+          "expect_kind": {
+            "type": "string"
+          },
+          "expect_value": {
+            "type": "string",
+            "description": "target_exists 时必须填写当前观察中的 target_id"
+          }
+        },
+        "required": [
+          "target_id",
+          "expect_kind",
+          "expect_value"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "scroll",
+      "description": "按像素垂直滚动页面",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "amount"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "wait",
+      "description": "短暂等待页面异步变化，最长 10 秒",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "seconds": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10
+          }
+        },
+        "required": [
+          "seconds"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "wait_until",
+      "description": "等待可验证的页面或业务条件；等待期间由代码检查，不持续调用模型，进程中断后可从检查点恢复",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "expect_kind": {
+            "type": "string",
+            "enum": [
+              "url_contains",
+              "title_contains",
+              "text_contains",
+              "target_exists"
+            ]
+          },
+          "expect_value": {
+            "type": "string"
+          },
+          "timeout_seconds": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 86400
+          },
+          "poll_interval_seconds": {
+            "type": "number",
+            "minimum": 0.01,
+            "maximum": 30
+          }
+        },
+        "required": [
+          "reason",
+          "expect_kind",
+          "expect_value",
+          "timeout_seconds",
+          "poll_interval_seconds"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "inspect_collection_structure",
+      "description": "只读分析当前页面中重复出现的列表、表格或卡片结构；返回候选 CSS 行选择器和字段提示，不逐条输出业务数据",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "run_structured_extraction",
+      "description": "从上一轮结构观察中选择 candidate_id；代码复用已验证的字段与分页提示，批量采集、去重、校验并导出私有 JSON/CSV。用户要求每条详情时，从候选 detail_hints 选择 detail_field_id，由代码逐条合并。不要生成 CSS 或逐条复述数据",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "collection_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "candidate_id": {
+            "type": "string",
+            "description": "上一轮 inspect_collection_structure 返回的候选 ID"
+          },
+          "unique_field_id": {
+            "type": "string",
+            "description": "可选；候选中的稳定唯一字段 ID，省略时由代码选择"
+          },
+          "detail_field_id": {
+            "type": "string",
+            "description": "可选；用户要求逐条详情时，选择候选 detail_hints 中的详情入口 ID"
+          },
+          "filters": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "properties": {
+                "field_id": {
+                  "type": "string"
+                },
+                "operator": {
+                  "type": "string",
+                  "enum": [
+                    "equals",
+                    "not_equals",
+                    "contains",
+                    "starts_with",
+                    "ends_with"
+                  ]
+                },
+                "value": {
+                  "type": [
+                    "string",
+                    "number",
+                    "integer",
+                    "boolean"
+                  ]
+                }
+              },
+              "required": [
+                "field_id",
+                "operator",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "max_pages": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "max_items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000
+          }
+        },
+        "required": [
+          "collection_name",
+          "candidate_id"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "screenshot",
+      "description": "保存当前页面证据截图",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finish",
+      "description": "仅在任务目标已通过页面证据确认后完成任务",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "memories": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "attention",
+                    "load_condition",
+                    "locator",
+                    "recovery",
+                    "navigation",
+                    "data_hint"
+                  ]
+                },
+                "content": {
+                  "type": "object"
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "required": [
+                "kind",
+                "content"
+              ]
+            }
+          }
+        },
+        "required": [
+          "summary"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "ask_user",
+      "description": "仅当缺少无法从页面、任务输入或工具结果推导的业务事实，或存在不可逆业务选择时向用户提出一个具体问题；不得用于技术不确定、页面仍可观察、等待模型或已有输入",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "ambiguous_goal",
+              "missing_business_fact",
+              "irreversible_choice"
+            ]
+          },
+          "input_key": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$",
+            "description": "保存下一条用户回答的稳定任务输入键，例如 phone 或 order_number"
+          },
+          "answer_type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "identifier",
+              "number",
+              "choice",
+              "secret"
+            ],
+            "description": "回答的预期类型；手机号、订单号等单值使用 identifier"
+          }
+        },
+        "required": [
+          "question",
+          "reason",
+          "input_key",
+          "answer_type"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "block",
+      "description": "权限、验证码、MFA、凭据或安全策略使任务无法继续时停止",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "inspect_network_data",
+      "description": "只读列出代码捕获的 JSON 接口候选；只返回去查询参数的路径、状态、大小和字段结构，不返回响应记录值",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "max_candidates": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "export_network_response",
+      "description": "选择一个或多个已观察的同接口候选，由代码聚合、去重并导出私有 JSON；识别到记录数组时同时导出 CSV，模型只接收计数和产物路径。多个分页响应只有在声明总数或总页数闭合时才会被标记完整",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "candidate_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "minItems": 1,
+            "maxItems": 50,
+            "uniqueItems": true
+          },
+          "collection_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "collection_name"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "wait_network_response",
+      "description": "在页面动作已经触发请求后，等待匹配 URL 子串的网络响应到达；由代码等待，不占用模型轮次。命中授权 origin 内的 2xx JSON 时返回可直接导出的 candidate_id，其余情况返回状态和类型元数据，超时返回未匹配",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "url_substring": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "接口 URL 中的稳定子串，例如 /api/order/list"
+          },
+          "timeout_seconds": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 300
+          }
+        },
+        "required": [
+          "url_substring"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "manage_network_route",
+      "description": "管理当前任务允许 origin 内的网络路由。list 只读查看；add 可阻断请求、修改请求、返回模拟响应或替换响应；remove 删除已安装规则。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "operation": {
+            "type": "string",
+            "enum": [
+              "list",
+              "add",
+              "remove"
+            ]
+          },
+          "rule_id": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "url_pattern": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "block",
+              "modify_request",
+              "mock_response",
+              "modify_response"
+            ]
+          },
+          "method": {
+            "type": "string",
+            "maxLength": 20
+          },
+          "request_headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "request_header_input_keys": {
+            "type": "object",
+            "description": "请求 Header 名到任务 input_key 的映射。Authorization、Cookie、Host、令牌和 API Key 等敏感值必须通过此字段注入；Host 会按 Chromium 约束编译为同路径、同查询的请求 URL authority 重写",
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          "request_method": {
+            "type": "string",
+            "maxLength": 20
+          },
+          "request_body": {
+            "type": "string",
+            "maxLength": 16000
+          },
+          "response_status": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
+          },
+          "response_headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "response_header_input_keys": {
+            "type": "object",
+            "description": "响应 Header 名到任务 input_key 的映射，敏感值只在执行层解析",
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          "response_body": {
+            "type": "string",
+            "maxLength": 16000
+          }
+        },
+        "required": [
+          "operation"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "inspect_page_diagnostics",
+      "description": "只读检查页面就绪状态、焦点、控制台异常和失败网络请求；动作没有产生预期结果或页面行为不明时主动调用",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "max_console": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "max_network": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "click_locator",
+      "description": "候选 target_id 不可用时，以 CSS、XPath、role、text、label 或 test_id 定位并点击",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "locator": {
+            "type": "object",
+            "description": "显式定位器；普通情况下优先使用观察结果中的 target_id",
+            "properties": {
+              "strategy": {
+                "type": "string",
+                "enum": [
+                  "css",
+                  "xpath",
+                  "role",
+                  "text",
+                  "label",
+                  "test_id"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "role 策略可用的可访问名称"
+              },
+              "exact": {
+                "type": "boolean"
+              },
+              "index": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "timeout_seconds": {
+                "type": "number",
+                "minimum": 0.1,
+                "maximum": 15
+              }
+            },
+            "required": [
+              "strategy",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          "expect_kind": {
+            "type": "string",
+            "enum": [
+              "url_contains",
+              "title_contains",
+              "text_contains",
+              "target_exists",
+              "fingerprint_changed"
+            ]
+          },
+          "expect_value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locator",
+          "expect_kind",
+          "expect_value"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "input_text_locator",
+      "description": "候选 target_id 不可用时，以显式定位器找到输入框并写入任务输入键对应的值",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "locator": {
+            "type": "object",
+            "description": "显式定位器；普通情况下优先使用观察结果中的 target_id",
+            "properties": {
+              "strategy": {
+                "type": "string",
+                "enum": [
+                  "css",
+                  "xpath",
+                  "role",
+                  "text",
+                  "label",
+                  "test_id"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "role 策略可用的可访问名称"
+              },
+              "exact": {
+                "type": "boolean"
+              },
+              "index": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "timeout_seconds": {
+                "type": "number",
+                "minimum": 0.1,
+                "maximum": 15
+              }
+            },
+            "required": [
+              "strategy",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          "input_key": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locator",
+          "input_key"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "select_locator",
+      "description": "候选 target_id 不可用时，以显式定位器找到下拉框并选择任务值或静态值",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "locator": {
+            "type": "object",
+            "description": "显式定位器；普通情况下优先使用观察结果中的 target_id",
+            "properties": {
+              "strategy": {
+                "type": "string",
+                "enum": [
+                  "css",
+                  "xpath",
+                  "role",
+                  "text",
+                  "label",
+                  "test_id"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "role 策略可用的可访问名称"
+              },
+              "exact": {
+                "type": "boolean"
+              },
+              "index": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "timeout_seconds": {
+                "type": "number",
+                "minimum": 0.1,
+                "maximum": 15
+              }
+            },
+            "required": [
+              "strategy",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          "value": {
+            "type": "string"
+          },
+          "input_key": {
+            "type": "string"
+          },
+          "expect_kind": {
+            "type": "string"
+          },
+          "expect_value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locator",
+          "expect_kind",
+          "expect_value"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "list_tabs",
+      "description": "只读列出当前浏览器的页面标签；返回脱敏 URL、标题、是否当前页和是否任务自建，不改变页面状态",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "switch_tab",
+      "description": "把任务操作切换到 list_tabs 返回的指定标签页；切换后旧页面观察全部失效，必须重新观察当前页面",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "target_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "target_id"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "close_tab",
+      "description": "关闭任务自己创建的标签页；用户原有页面不能关闭。关闭当前页后会自动回到其余任务页面",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "target_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "target_id"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "report_capability_gap",
+      "description": "仅当当前开放的现有工具都无法表达任务所需能力时，上报结构化能力缺口。该调用只记录问题供后台反思和后续人工改进，不生成代码、不修改项目、不重启服务；网站报错、选择器不确定、缺少任务输入或单次动作失败不属于能力缺口",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "area": {
+            "type": "string",
+            "enum": [
+              "browser_action",
+              "locator",
+              "network_data",
+              "output_delivery",
+              "recovery",
+              "structured_extraction"
+            ]
+          },
+          "capability": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600,
+            "description": "现有框架缺少的确定性工具能力"
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600,
+            "description": "当前开放工具无法表达该能力的结构化事实，不包含网页正文或凭据"
+          },
+          "related_tool": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "最接近该能力的现有工具名"
+          }
+        },
+        "required": [
+          "area",
+          "capability",
+          "evidence"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+]
