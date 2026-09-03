@@ -14,3 +14,4 @@ docs/change_maintenance/artifacts/
 outputs/
 # agent 会话状态，属本机运行态，不随仓库发布
 .omx/
+.claude/settings.local.json

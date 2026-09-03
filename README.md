@@ -13,20 +13,26 @@
 | 能执行 Python 的编码型智能体：Claude Code、Cursor、Codex | **Skill**（教它怎么写调用代码）+ 安装本库 | 产出物是可脱离模型反复运行的脚本 |
 | 只能调工具、不能跑代码：Claude Desktop 及各类 MCP 客户端 | **MCP 服务端** | 一次工具调用完成一步，结果自带新页面状态 |
 
-编码型智能体两种都可以装：Skill 负责"写采集脚本"这类需要产出代码的任务，MCP 负责"帮我点一下看看"这类即时操作。
+编码型智能体两种都可以装：Skill 负责"写采集脚本"这类需要产出代码的任务，MCP 负责"帮我点一下看看"这类即时操作。**如果你想让智能体主动写脚本而不是逐步点击，只装 Skill、不要在同一个项目里注册 MCP**——工具就在手边时，模型总会选直接调用而不是写文件。Skill 里写明了两者的取舍规则，但不给它 MCP 是最可靠的办法。
 
 ### 第 0 步：安装本库
 
+Skill 方式要求智能体所在项目的 Python 环境能 `import witty_browser_auto`，所以要装进**那个项目的环境**，而不是全局：
+
 ```bash
-# 推荐：装成独立命令 witty-browser-auto（MCP 配置里直接引用）
-uv tool install git+https://github.com/baiyoucai-bot/witty-browser-auto.git
-# 或者装进当前项目的 Python 环境（Skill 方式需要能 import witty_browser_auto）
+# 在你的项目里（未发布到 PyPI，用 git 地址）
 pip install git+https://github.com/baiyoucai-bot/witty-browser-auto.git
+#   uv 项目：uv add git+https://github.com/baiyoucai-bot/witty-browser-auto.git
+
+# MCP 方式另装一个全局命令，配置里直接引用
+uv tool install git+https://github.com/baiyoucai-bot/witty-browser-auto.git
 
 witty-browser-auto doctor   # 自检本机 Chrome 与存储目录
 ```
 
 要求 Python 3.11+，本机装有 Chrome 或 Chromium。运行依赖只有 `aiohttp`。
+
+在本仓库内直接使用不需要任何安装步骤：`uv sync` 之后，`.agents/skills/` 与 `.claude/skills/` 下已有指向 Skill 的符号链接，Cursor、Codex、Claude Code 打开仓库就能发现它，`AGENTS.md`/`CLAUDE.md` 也写明了浏览器任务要走本库写脚本。
 
 ### Claude Code
 

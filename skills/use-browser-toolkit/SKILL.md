@@ -1,11 +1,21 @@
 ---
 name: use-browser-toolkit
-description: 用 Python 调用Witty 浏览器工具库（witty_browser_auto.toolkit）驱动真实 Chrome 完成网页自动化与数据采集。适用场景：采集/爬取网页数据（列表、表格、分页、逐条详情）、抓包排查接口（为什么 401、真实接口地址、请求头带没带 token）、逆向接口并导出 curl/requests/fetch 代码、沿分页把接口数据一次取全、自动登录与表单批量填写、文件上传下载、Cookie 与登录态跨会话复用、iframe 与验证码处理、移动端与弱网模拟、把跑通的流程导出为可独立重跑的脚本。当用户提到"采集数据、爬虫、抓包、翻页取全、逆向接口、浏览器自动化、写采集脚本、自动登录"，或任何需要操作真实浏览器页面的任务时使用本技能。
+description: 写 Python 脚本调用 Witty 浏览器工具库（witty_browser_auto.toolkit）驱动本机真实 Chrome，完成网页自动化与数据采集，产出可反复运行的脚本。适用场景：采集/爬取网页数据（列表、表格、分页、逐条详情）、抓包排查接口（为什么 401、真实接口地址、请求头带没带 token）、逆向接口并导出 curl/requests/fetch 代码、沿分页把接口数据一次取全、自动登录与表单批量填写、文件上传下载、Cookie 与登录态跨会话复用、iframe 与验证码处理、移动端与弱网模拟、把跑通的流程固化为独立脚本。当用户提到"采集数据、爬虫、抓包、翻页取全、逆向接口、浏览器自动化、写采集脚本、写爬虫、自动登录、RPA"，或任何需要操作真实浏览器页面、且结果需要能再跑一次的任务时，用本技能写代码，而不是逐步手动点击。
 ---
 
 # 直接调用浏览器工具
 
 本项目的 64 个浏览器工具通过 `witty_browser_auto.toolkit` 对外开放。全部是确定性代码：参数校验、业务后置条件、脱敏、非幂等防重放和采集完整性门由执行层统一保证，本库不发起任何模型调用——由你决定每一步调什么，由它保证每一步做对、失败时给出可行动的原因。生产或回归只读场景可传 `read_only=True`，或在 `security.read_only` / `WITTY_BROWSER_AUTO_READ_ONLY` 开启硬门控；副作用工具会在浏览器执行前返回 `failure_kind=policy`。
+
+## 先做两件事：确认能 import，决定写脚本还是调工具
+
+**前置检查。** 本技能的全部示例都建立在 `import witty_browser_auto` 成功之上。开始前先在目标 Python 环境里跑一次 `python -c "import witty_browser_auto"`；失败就先安装——本库未发布到 PyPI，用 `pip install git+https://github.com/baiyoucai-bot/witty-browser-auto.git`（uv 项目用 `uv add git+https://github.com/baiyoucai-bot/witty-browser-auto.git`）。再跑 `witty-browser-auto doctor` 确认本机 Chrome 可用。这两步失败就停下来把原因告诉用户，不要换成别的浏览器方案绕过去——用户装本技能就是要用这套确定性执行层。
+
+**写脚本，还是逐步调工具。** 如果你所在的环境同时接入了本库的 MCP 服务端（工具名形如 `open_browser`/`observe`/`click`），两条路都通向同一套执行层，按任务性质选：
+
+- 用户要的是**能再跑一次的产出**（采集脚本、自动登录、定时对账、"以后每周跑"）、流程超过五步、或涉及分页取全/接口逆向/导出代码——**写 Python 脚本**，运行它，把脚本和产物一起交给用户。这是本技能存在的意义。
+- 用户只是要**看一眼、点一下、确认一个状态**——直接调 MCP 工具，不必为一次性动作写文件。
+- 拿不准时写脚本：脚本失败能改能重跑，逐步点击的过程结束后什么都不剩。
 
 ## 三分钟上手
 
