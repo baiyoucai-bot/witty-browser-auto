@@ -43,6 +43,7 @@ from witty_browser_auto.mcp_server.protocol import (
     encode_message,
     parse_request,
 )
+from witty_browser_auto.mcp_server.tools import CLOSE_BROWSER_TOOL, OBSERVE_TOOL, OPEN_BROWSER_TOOL
 from witty_browser_auto.toolkit.catalog import BROWSER_TOOLS
 from witty_browser_auto.toolkit.facade import BrowserToolkit
 
@@ -151,6 +152,76 @@ def test_descriptor_carries_the_return_contract() -> None:
     assert descriptor["name"] == "navigate"
     assert "返回：" in descriptor["description"]
     assert descriptor["inputSchema"]["properties"]["url"]["type"] == "string"
+
+
+def test_descriptor_annotations_follow_registry_flags() -> None:
+    """annotations 是客户端决定要不要请求授权的依据，必须与注册表的读写声明一致。"""
+
+    for definition in BROWSER_TOOLS.externally_callable():
+        hints = mcp_descriptor(definition)["annotations"]
+        write = definition.requires_write_permission
+        assert hints["idempotentHint"] is bool(definition.idempotent), definition.name
+        assert hints["openWorldHint"] is True
+        # 需要写权限的一定不是只读；只读的一定不需要写权限且不改页面（瞬时动作除外）。
+        if write:
+            assert hints["readOnlyHint"] is False, definition.name
+            assert hints["destructiveHint"] is (not definition.idempotent), definition.name
+        else:
+            assert hints["destructiveHint"] is False, definition.name
+            if definition.counts_as_action and definition.name not in {
+                "wait",
+                "screenshot",
+                "scroll",
+                "hover",
+            }:
+                assert hints["readOnlyHint"] is False, definition.name
+            else:
+                assert hints["readOnlyHint"] is True, definition.name
+
+
+def test_annotations_do_not_let_clients_auto_approve_page_mutations() -> None:
+    """readOnlyHint 的规范含义是"不改变环境"：导航、标签页、网络路由、整页采集都改了浏览器，
+    不能因为 read_only 门控放行它们就标成只读，否则客户端会不问用户直接放模型去导航。"""
+
+    def hints(name: str) -> dict[str, bool]:
+        return mcp_descriptor(BROWSER_TOOLS.get(name))["annotations"]
+
+    for name in (
+        "navigate",
+        "navigate_history",
+        "open_tab",
+        "switch_tab",
+        "close_tab",
+        "manage_network_route",
+        "run_structured_extraction",
+        "replay_collection_program",
+    ):
+        assert hints(name)["readOnlyHint"] is False, name
+        # 改了环境但不是破坏性更新：客户端应当询问，而不是按最高级别告警。
+        assert hints(name)["destructiveHint"] is False, name
+    for name in ("read_page_markdown", "read_element", "inspect_network_traffic", "list_tabs"):
+        assert hints(name)["readOnlyHint"] is True, name
+    # 瞬时动作：改的是视口与指针，不导航不提交，视为只读。
+    for name in ("scroll", "hover", "wait", "screenshot"):
+        assert hints(name)["readOnlyHint"] is True, name
+    # 业务写：点击非幂等即破坏性；填表幂等则不是。
+    click = hints("click")
+    assert click["readOnlyHint"] is False and click["destructiveHint"] is True
+    fill = hints("fill_form")
+    assert fill["readOnlyHint"] is False and fill["destructiveHint"] is False
+
+
+def test_session_tools_carry_annotations_too() -> None:
+    tools = _rpc(_server(profile="core"), "tools/list")["result"]["tools"]
+    by_name = {item["name"]: item for item in tools}
+    assert all("annotations" in item for item in tools)
+    observe = by_name[OBSERVE_TOOL]["annotations"]
+    assert observe["readOnlyHint"] is True
+    # 观察读的是外部网页，与 read_element 一样属于开放世界。
+    assert observe["openWorldHint"] is True
+    assert by_name[OPEN_BROWSER_TOOL]["annotations"]["readOnlyHint"] is False
+    assert by_name[OPEN_BROWSER_TOOL]["annotations"]["openWorldHint"] is True
+    assert by_name[CLOSE_BROWSER_TOOL]["annotations"]["idempotentHint"] is True
 
 
 # ----------------------------------------------------------------------

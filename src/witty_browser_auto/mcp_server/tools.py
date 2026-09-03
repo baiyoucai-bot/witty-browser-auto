@@ -62,6 +62,8 @@ OBSERVE_TOOL = "observe"
 SESSION_TOOL_NAMES: tuple[str, ...] = (OPEN_BROWSER_TOOL, OBSERVE_TOOL, CLOSE_BROWSER_TOOL)
 
 # MCP 客户端只能收文本，因此这三个工具的 schema 在这里手写，不走浏览器工具注册表。
+# annotations 按 MCP 规范 2025-03-26 起的定义：客户端据 readOnlyHint 决定要不要向用户请求
+# 授权、能不能并行；openWorldHint 为真表示工具会触达浏览器之外的开放世界，也就是网页。
 SESSION_TOOLS: tuple[dict[str, Any], ...] = (
     {
         "name": OPEN_BROWSER_TOOL,
@@ -82,6 +84,13 @@ SESSION_TOOLS: tuple[dict[str, Any], ...] = (
             },
             "required": ["url"],
             "additionalProperties": False,
+        },
+        "annotations": {
+            "title": "打开浏览器",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
         },
     },
     {
@@ -110,11 +119,25 @@ SESSION_TOOLS: tuple[dict[str, Any], ...] = (
             },
             "additionalProperties": False,
         },
+        "annotations": {
+            "title": "观察页面",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
     },
     {
         "name": CLOSE_BROWSER_TOOL,
         "description": "关闭当前浏览器会话并释放产物与记忆写入队列；没有会话时也安全",
         "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+        "annotations": {
+            "title": "关闭浏览器",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
     },
 )
 
@@ -152,6 +175,38 @@ def profile_definitions(
     return tuple(selected)
 
 
+# 这些工具计动作步数，但只改瞬时的视口、指针或等待状态：不导航、不提交、不写存储、不装路由。
+# 对 MCP 客户端而言它们与读取无异，逐次向用户请求授权只会把一次采集拖成十几次点头。
+_EPHEMERAL_ACTION_TOOLS: frozenset[str] = frozenset({"wait", "screenshot", "scroll", "hover"})
+
+
+def tool_annotations(definition: ToolDefinition) -> dict[str, Any]:
+    """从注册表声明派生 MCP `annotations`，让客户端不必猜哪些工具只读、哪些会改页面。
+
+    - `readOnlyHint`：MCP 规范里它的含义是"不改变环境"，比本库 `read_only` 门控放行的范围
+      更窄——门控只管业务副作用，导航、开关标签页、安装网络路由、整页采集都被门控放行，
+      但它们确实改变了浏览器的状态。所以只读 = 不需要写权限 **且** 不改变页面/浏览器状态
+      （`counts_as_action` 为假），再加上 `_EPHEMERAL_ACTION_TOOLS` 这几个只改瞬时状态的。
+      否则客户端按只读自动放行，模型就能在不问用户的情况下导航到任意授权页面、关掉标签页
+      或给请求装上 mock 规则。
+    - `destructiveHint`：只对需要写权限且非幂等的工具为真，如点击、输入、重放请求；幂等写
+      （填表回读、导入会话态）与所有非写工具都为假。导航、采集虽然不算只读，但不是"破坏性
+      更新"，不该让客户端按最高级别告警。规范默认值是真，这里对非破坏性工具显式给假。
+    - `openWorldHint`：浏览器工具都会触达页面所在的开放世界，一律为真。
+    """
+
+    write = bool(definition.requires_write_permission)
+    read_only = not write and (
+        not definition.counts_as_action or definition.name in _EPHEMERAL_ACTION_TOOLS
+    )
+    return {
+        "readOnlyHint": read_only,
+        "destructiveHint": write and not definition.idempotent,
+        "idempotentHint": bool(definition.idempotent),
+        "openWorldHint": True,
+    }
+
+
 def mcp_descriptor(definition: ToolDefinition) -> dict[str, Any]:
     """把浏览器工具声明转成 MCP 工具描述符。
 
@@ -167,6 +222,7 @@ def mcp_descriptor(definition: ToolDefinition) -> dict[str, Any]:
         "name": definition.name,
         "description": description,
         "inputSchema": schema["parameters"],
+        "annotations": tool_annotations(definition),
     }
 
 
